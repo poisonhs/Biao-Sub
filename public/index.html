@@ -165,30 +165,35 @@
                     <button @click="openGroupModal()" class="btn btn-accent btn-sm text-white"><i
                             class="fa-solid fa-plus"></i> 新建聚合组</button>
                 </div>
-                <div class="grid grid-cols-1 gap-6">
-                    <div v-for="group in groups" :key="group.id"
+                <div class="grid grid-cols-1 gap-6" ref="groupListEl">
+                    <div v-for="group in groups" :key="group.id" :data-id="group.id"
                         class="card bg-slate-800/50 border border-slate-700 shadow-xl">
                         <div class="card-body p-5">
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div>
-                                    <h2 class="card-title text-lg text-accent">{{ group.name }}</h2>
-                                    <div class="text-xs text-slate-500 mt-1">包含资源: <span class="text-slate-300">{{
-                                            getGroupResourceCount(group) }}</span> 个</div>
-                                </div>
-                                <div class="flex gap-2 flex-wrap">
-                                    <button @click="copyGroupLink(group, 'clash')"
-                                        class="btn btn-sm bg-[#1e1e1e] hover:bg-[#2d2d2d] text-slate-400 border-slate-600"><i
-                                            class="fa-solid fa-cat"></i> Clash</button>
-                                    <button @click="copyGroupLink(group, 'base64')"
-                                        class="btn btn-sm bg-[#1e1e1e] hover:bg-[#2d2d2d] text-slate-400 border-slate-600"><i
-                                            class="fa-solid fa-link"></i> V2RayN</button>
+                                <div class="flex items-center gap-3">
+                                    <i
+                                        class="fa-solid fa-grip-vertical drag-handle text-slate-600 cursor-move hover:text-slate-400"></i>
+                                    <div>
+                                        <h2 class="card-title text-lg text-accent">{{ group.name }}</h2>
+                                        <div class="text-xs text-slate-500 mt-1">包含资源: <span class="text-slate-300">{{
+                                                getGroupResourceCount(group) }}</span> 个</div>
+                                    </div>
+                                    <div class="flex gap-2 flex-wrap">
+                                        <button @click="copyGroupLink(group, 'clash')"
+                                            class="btn btn-sm bg-[#1e1e1e] hover:bg-[#2d2d2d] text-slate-400 border-slate-600"><i
+                                                class="fa-solid fa-cat"></i> Clash</button>
+                                        <button @click="copyGroupLink(group, 'base64')"
+                                            class="btn btn-sm bg-[#1e1e1e] hover:bg-[#2d2d2d] text-slate-400 border-slate-600"><i
+                                                class="fa-solid fa-link"></i> V2RayN</button>
 
-                                    <button @click="refreshToken(group)" class="btn btn-sm btn-ghost text-warning"
-                                        title="刷新密钥"><i class="fa-solid fa-key"></i></button>
-                                    <button @click="editGroup(group)" class="btn btn-sm btn-ghost"><i
-                                            class="fa-solid fa-pen"></i></button>
-                                    <button @click="deleteGroup(group.id)" class="btn btn-sm btn-ghost text-error"><i
-                                            class="fa-solid fa-trash"></i></button>
+                                        <button @click="refreshToken(group)" class="btn btn-sm btn-ghost text-warning"
+                                            title="刷新密钥"><i class="fa-solid fa-key"></i></button>
+                                        <button @click="editGroup(group)" class="btn btn-sm btn-ghost"><i
+                                                class="fa-solid fa-pen"></i></button>
+                                        <button @click="deleteGroup(group.id)"
+                                            class="btn btn-sm btn-ghost text-error"><i
+                                                class="fa-solid fa-trash"></i></button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="divider my-1"></div>
@@ -205,7 +210,8 @@
                             <div v-else class="text-xs text-slate-600 italic">V2Ray: 未选择资源</div>
 
                             <div class="mt-2 text-xs" v-if="group.clash_config">
-                                <span v-if="group.clash_config.mode === 'raw'" class="text-success">Clash: 托管配置模式</span>
+                                <span v-if="group.clash_config.mode === 'raw'" class="text-success">Clash:
+                                    托管配置模式</span>
                                 <span v-else class="text-slate-500">Clash: 资源 {{group.clash_config.resources ?
                                     group.clash_config.resources.length : 0}} 个</span>
                             </div>
@@ -385,7 +391,8 @@
                                             <i class="fa-solid fa-list-check mr-1"></i> 选择节点
                                         </button>
                                         <span class="text-xs text-slate-400">
-                                            已选: <span class="text-accent font-bold">{{ g.proxies && g.proxies.length > 0
+                                            已选: <span class="text-accent font-bold">{{ g.proxies && g.proxies.length
+                                                > 0
                                                 ? g.proxies.length : '全部' }}</span>
                                         </span>
                                     </div>
@@ -582,13 +589,36 @@
             </dialog>
 
             <dialog class="modal" :class="{ 'modal-open': previewModal.show }">
-                <div class="modal-box bg-slate-800 border border-slate-700">
-                    <h3 class="font-bold text-lg text-white mb-4">节点预览 <span
-                            class="text-xs text-slate-400">(可拖动排序)</span></h3>
+                <div class="modal-box bg-slate-800 border border-slate-700 max-w-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-white">
+                            节点预览
+                            <span class="badge badge-neutral ml-2">{{ previewModal.nodes.length }} 个</span>
+                        </h3>
+                        <div class="flex gap-2">
+                            <button v-if="!previewModal.sortMode" @click="enterSortMode"
+                                class="btn btn-sm btn-outline btn-accent">
+                                <i class="fa-solid fa-sort"></i> 排序节点
+                            </button>
+                            <button v-if="previewModal.sortMode" @click="saveNodeOrder" class="btn btn-sm btn-success">
+                                <i class="fa-solid fa-save"></i> 保存排序
+                            </button>
+                            <button v-if="previewModal.sortMode" @click="cancelSortMode"
+                                class="btn btn-sm btn-ghost">取消</button>
+                        </div>
+                    </div>
+
+                    <div v-if="previewModal.sortMode" class="alert alert-info mb-3 py-2">
+                        <i class="fa-solid fa-info-circle"></i>
+                        <span class="text-sm">拖动节点调整顺序，完成后点击"保存排序"</span>
+                    </div>
+
                     <div ref="previewListEl" class="max-h-96 overflow-y-auto bg-slate-900 rounded p-2">
-                        <div v-for="(node, idx) in previewModal.nodes" :key="idx" :data-idx="idx"
-                            class="text-xs text-slate-400 border-b border-slate-700 py-2 flex items-center gap-2">
-                            <div class="drag-handle cursor-move text-slate-500 hover:text-slate-300 flex-shrink-0">
+                        <div v-for="(node, idx) in previewModal.nodes" :key="node.link || idx"
+                            class="text-xs text-slate-400 border-b border-slate-700 py-2 flex items-center gap-2"
+                            :class="{'bg-slate-800/50': previewModal.sortMode}">
+                            <div v-if="previewModal.sortMode"
+                                class="drag-handle cursor-move text-slate-500 hover:text-slate-300 flex-shrink-0">
                                 <i class="fa-solid fa-grip-vertical"></i>
                             </div>
                             <div class="flex-1 min-w-0">
@@ -604,7 +634,7 @@
                     </div>
                     <div class="modal-action">
                         <button class="btn btn-secondary btn-sm" @click="copyAllPreviewNodes">复制全部链接</button>
-                        <button class="btn btn-ghost btn-sm" @click="previewModal.show=false">关闭</button>
+                        <button class="btn btn-ghost btn-sm" @click="closePreviewModal">关闭</button>
                     </div>
                 </div>
             </dialog>
@@ -616,27 +646,6 @@
                         <i class="fa-solid fa-gear text-accent"></i> 系统设置
                     </h3>
 
-                    <!-- 修改密码 -->
-                    <div class="collapse collapse-arrow bg-slate-900 border border-slate-700 mb-3">
-                        <input type="checkbox" />
-                        <div class="collapse-title text-sm font-medium text-white flex items-center gap-2">
-                            <i class="fa-solid fa-key text-warning"></i> 修改管理密码
-                        </div>
-                        <div class="collapse-content">
-                            <div class="flex flex-col gap-3 pt-2">
-                                <input type="password" v-model="settingsModal.newPassword" placeholder="输入新密码"
-                                    class="input input-bordered input-sm bg-slate-800" />
-                                <input type="password" v-model="settingsModal.confirmPassword" placeholder="确认新密码"
-                                    class="input input-bordered input-sm bg-slate-800" />
-                                <button @click="changePassword" class="btn btn-sm btn-warning">
-                                    <i class="fa-solid fa-save"></i> 保存密码
-                                </button>
-                                <div class="text-xs text-slate-500">
-                                    <i class="fa-solid fa-info-circle"></i> 修改后需要在 Cloudflare 环境变量中同步更新 ADMIN_PASSWORD
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- 数据备份 -->
                     <div class="collapse collapse-arrow bg-slate-900 border border-slate-700 mb-3">
@@ -685,7 +694,8 @@
 
             <div v-if="toast.show" class="toast toast-bottom toast-end z-50">
                 <div class="alert shadow-lg text-white"
-                    :class="toast.type === 'success' ? 'alert-success' : 'alert-error'"><span>{{ toast.message }}</span>
+                    :class="toast.type === 'success' ? 'alert-success' : 'alert-error'"><span>{{ toast.message
+                        }}</span>
                 </div>
             </div>
         </div>
@@ -717,12 +727,13 @@
                     const submitting = ref(false)
                     const nodeSelector = reactive({ show: false, loading: false, resourceId: null, resourceName: '', nodes: [], selected: 'all', tempSelected: [] })
                     const clashNodeSelector = reactive({ show: false, loading: false, currentGroup: null, allNodeNames: [], tempSelected: [] })
-                    const previewModal = reactive({ show: false, nodes: [] })
+                    const previewModal = reactive({ show: false, nodes: [], sortMode: false, resourceId: null, originalNodes: [] })
                     const settingsModal = reactive({ show: false, newPassword: '', confirmPassword: '' })
                     const clashSelectedList = ref(null)
                     const resourceListEl = ref(null)
                     const previewListEl = ref(null)
                     const groupResourceListEl = ref(null)
+                    const groupListEl = ref(null)
 
                     // --- 默认模板数据 ---
                     const defaultHeader = `mixed-port: 7890
@@ -836,6 +847,82 @@ dns:
                     }
                     const showToast = (msg, type = 'success') => { toast.message = msg; toast.type = type; toast.show = true; setTimeout(() => toast.show = false, 3000) }
                     const copyText = (txt) => navigator.clipboard.writeText(txt).then(() => showToast('已复制'))
+
+                    // 节点预览相关函数
+                    const previewNodes = async (item) => {
+                        previewModal.show = true
+                        previewModal.sortMode = false
+                        previewModal.resourceId = item.id
+                        previewModal.nodes = []
+                        previewModal.originalNodes = []
+
+                        try {
+                            const res = await authFetch(API + '/check', { method: 'POST', body: JSON.stringify({ url: item.url, type: item.type }) })
+                            const d = await res.json()
+                            if (d.success && d.data.nodes) {
+                                let nodes = d.data.nodes
+                                // 如果资源有保存的节点排序，应用它
+                                if (item.info && item.info.nodeOrder && Array.isArray(item.info.nodeOrder)) {
+                                    const orderMap = new Map(item.info.nodeOrder.map((link, idx) => [link, idx]))
+                                    nodes = [...nodes].sort((a, b) => {
+                                        const aIdx = orderMap.has(a.link) ? orderMap.get(a.link) : 9999
+                                        const bIdx = orderMap.has(b.link) ? orderMap.get(b.link) : 9999
+                                        return aIdx - bIdx
+                                    })
+                                }
+                                previewModal.nodes = nodes
+                                previewModal.originalNodes = [...nodes]
+                            } else {
+                                showToast('获取节点失败', 'error')
+                            }
+                        } catch (e) {
+                            showToast('获取节点失败: ' + e.message, 'error')
+                        }
+                    }
+
+                    const enterSortMode = () => {
+                        previewModal.sortMode = true
+                        previewModal.originalNodes = [...previewModal.nodes]
+                    }
+
+                    const cancelSortMode = () => {
+                        previewModal.sortMode = false
+                        previewModal.nodes = [...previewModal.originalNodes]
+                    }
+
+                    const saveNodeOrder = async () => {
+                        if (!previewModal.resourceId) return
+                        try {
+                            // 保存节点顺序到资源的 info 中
+                            const nodeOrder = previewModal.nodes.map(n => n.link)
+                            const res = resources.value.find(r => r.id === previewModal.resourceId)
+                            if (res) {
+                                const newInfo = { ...(res.info || {}), nodeOrder }
+                                await authFetch(`${API}/subs/${previewModal.resourceId}`, {
+                                    method: 'PUT',
+                                    body: JSON.stringify({ info: newInfo })
+                                })
+                                res.info = newInfo
+                                showToast('节点排序已保存')
+                            }
+                            previewModal.sortMode = false
+                        } catch (e) {
+                            showToast('保存失败: ' + e.message, 'error')
+                        }
+                    }
+
+                    const closePreviewModal = () => {
+                        if (previewModal.sortMode) {
+                            if (!confirm('排序尚未保存，确定关闭？')) return
+                        }
+                        previewModal.show = false
+                        previewModal.sortMode = false
+                    }
+
+                    const copyAllPreviewNodes = () => {
+                        const links = previewModal.nodes.map(n => n.link).join('\n')
+                        navigator.clipboard.writeText(links).then(() => showToast('已复制全部链接'))
+                    }
 
                     const handleLogin = async () => {
                         loginLoading.value = true
@@ -1120,51 +1207,82 @@ dns:
 
                     // 资源池拖动排序
                     let resourceSortable = null
-                    Vue.onMounted(() => {
-                        Vue.nextTick(() => {
-                            if (resourceListEl.value) {
-                                resourceSortable = new Sortable(resourceListEl.value, {
-                                    animation: 150,
-                                    handle: '.drag-handle',
-                                    ghostClass: 'sortable-ghost',
-                                    dragClass: 'sortable-drag',
-                                    onEnd: (evt) => {
-                                        const arr = [...resources.value]
-                                        const [moved] = arr.splice(evt.oldIndex, 1)
-                                        arr.splice(evt.newIndex, 0, moved)
-                                        resources.value = arr
-                                        // 保存排序到后端
-                                        authFetch(API + '/subs/reorder', {
-                                            method: 'POST',
-                                            body: JSON.stringify({ order: arr.map(r => r.id) })
-                                        })
-                                    }
+                    const initResourceSortable = () => {
+                        if (!resourceListEl.value) return
+                        if (resourceSortable) resourceSortable.destroy()
+                        resourceSortable = new Sortable(resourceListEl.value, {
+                            animation: 150,
+                            handle: '.drag-handle',
+                            ghostClass: 'sortable-ghost',
+                            dragClass: 'sortable-drag',
+                            onStart: () => {
+                                resourceSortable._snapshot = [...resources.value]
+                            },
+                            onEnd: (evt) => {
+                                const arr = resourceSortable._snapshot || [...resources.value]
+                                const [moved] = arr.splice(evt.oldIndex, 1)
+                                arr.splice(evt.newIndex, 0, moved)
+                                resourceSortable.destroy()
+                                resourceSortable = null
+                                resources.value = arr
+                                // 保存排序到后端
+                                authFetch(API + '/subs/reorder', {
+                                    method: 'POST',
+                                    body: JSON.stringify({ order: arr.map(r => r.id) })
                                 })
+                                showToast('排序已保存')
+                                Vue.nextTick(initResourceSortable)
                             }
                         })
-                    })
+                    }
+                    Vue.onMounted(() => Vue.nextTick(initResourceSortable))
 
-                    // 节点预览拖动排序
+                    // 节点预览拖动排序（仅在排序模式下启用）
                     let previewSortable = null
-                    Vue.watch(() => previewModal.show, (show) => {
-                        if (show) {
-                            Vue.nextTick(() => {
-                                if (previewListEl.value) {
-                                    if (previewSortable) previewSortable.destroy()
-                                    previewSortable = new Sortable(previewListEl.value, {
-                                        animation: 150,
-                                        handle: '.drag-handle',
-                                        ghostClass: 'sortable-ghost',
-                                        dragClass: 'sortable-drag',
-                                        onEnd: (evt) => {
-                                            const arr = [...previewModal.nodes]
-                                            const [moved] = arr.splice(evt.oldIndex, 1)
-                                            arr.splice(evt.newIndex, 0, moved)
-                                            previewModal.nodes = arr
-                                        }
-                                    })
+                    const initPreviewSortable = () => {
+                        // 销毁旧实例
+                        if (previewSortable) {
+                            previewSortable.destroy()
+                            previewSortable = null
+                        }
+                        // 只有在排序模式下才初始化
+                        if (!previewListEl.value || !previewModal.show || !previewModal.sortMode) return
+
+                        setTimeout(() => {
+                            if (!previewListEl.value || !previewModal.show || !previewModal.sortMode) return
+                            previewSortable = new Sortable(previewListEl.value, {
+                                animation: 150,
+                                handle: '.drag-handle',
+                                ghostClass: 'sortable-ghost',
+                                dragClass: 'sortable-drag',
+                                onStart: () => {
+                                    previewSortable._snapshot = [...previewModal.nodes]
+                                },
+                                onEnd: (evt) => {
+                                    const snapshot = previewSortable._snapshot
+                                    if (!snapshot) return
+                                    const arr = [...snapshot]
+                                    const [moved] = arr.splice(evt.oldIndex, 1)
+                                    arr.splice(evt.newIndex, 0, moved)
+                                    if (previewSortable) {
+                                        previewSortable.destroy()
+                                        previewSortable = null
+                                    }
+                                    previewModal.nodes = arr
+                                    setTimeout(initPreviewSortable, 100)
                                 }
                             })
+                        }, 50)
+                    }
+                    // 监听排序模式变化
+                    Vue.watch(() => previewModal.sortMode, (sortMode) => {
+                        if (sortMode) {
+                            Vue.nextTick(() => setTimeout(initPreviewSortable, 100))
+                        } else {
+                            if (previewSortable) {
+                                previewSortable.destroy()
+                                previewSortable = null
+                            }
                         }
                     })
 
@@ -1188,6 +1306,38 @@ dns:
                             }
                         })
                     })
+
+                    // 聚合组拖动排序
+                    let groupSortable = null
+                    const initGroupSortable = () => {
+                        if (!groupListEl.value) return
+                        if (groupSortable) groupSortable.destroy()
+                        groupSortable = new Sortable(groupListEl.value, {
+                            animation: 150,
+                            handle: '.drag-handle',
+                            ghostClass: 'sortable-ghost',
+                            dragClass: 'sortable-drag',
+                            onStart: () => {
+                                groupSortable._snapshot = [...groups.value]
+                            },
+                            onEnd: async (evt) => {
+                                const arr = groupSortable._snapshot || [...groups.value]
+                                const [moved] = arr.splice(evt.oldIndex, 1)
+                                arr.splice(evt.newIndex, 0, moved)
+                                groupSortable.destroy()
+                                groupSortable = null
+                                groups.value = arr
+                                // 保存排序到后端
+                                await authFetch(API + '/groups/reorder', {
+                                    method: 'POST',
+                                    body: JSON.stringify({ order: arr.map(g => g.id) })
+                                })
+                                showToast('排序已保存')
+                                Vue.nextTick(initGroupSortable)
+                            }
+                        })
+                    }
+                    Vue.onMounted(() => Vue.nextTick(initGroupSortable))
 
                     const handleYamlImport = (event) => {
                         const file = event.target.files[0];
@@ -1217,14 +1367,6 @@ dns:
                         reader.readAsText(file);
                         event.target.value = '';
                     }
-
-                    const previewNodes = async (item) => {
-                        const res = await authFetch(API + '/check', { method: 'POST', body: JSON.stringify({ url: item.url, type: item.type }) })
-                        const d = await res.json()
-                        if (d.success && d.data.nodes) { previewModal.nodes = d.data.nodes; previewModal.show = true }
-                        else { showToast('预览失败', 'error') }
-                    }
-                    const copyAllPreviewNodes = () => { copyText(previewModal.nodes.map(n => n.link).join('\n')) }
 
                     // 设置相关函数
                     const openSettings = () => {
@@ -1324,8 +1466,9 @@ dns:
                         templateModal, selectTemplate, userTemplates, loadTemplates, selectUserTemplate, deleteTemplate, saveAsTemplate, toggleResourceSelection, isResourceSelected, selectAllGroupResources, deselectAllGroupResources, getDialerProxy, setDialerProxy, groupResourceListEl,
                         nodeSelector, openNodeSelector, confirmNodeSelection,
                         clashNodeSelector, clashSelectedList, addClashGroup, openClashNodeSelector, clashSelectAll, removeFromClashSelected, confirmClashNodeSelection,
-                        previewModal, previewListEl, previewNodes, copyText, copyAllPreviewNodes, resourceListEl,
-                        settingsModal, openSettings, changePassword, exportBackup, importBackup, getProgressClass, isExpired
+                        previewModal, previewListEl, previewNodes, copyText, copyAllPreviewNodes, resourceListEl, groupListEl,
+                        enterSortMode, cancelSortMode, saveNodeOrder, closePreviewModal,
+                        settingsModal, openSettings, exportBackup, importBackup, getProgressClass, isExpired
                     }
                 } catch (e) {
                     alert("JS Error: " + e.message + "\n\n" + e.stack);
